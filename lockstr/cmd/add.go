@@ -1,9 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"strings"
+	"time"
 
+	"github.com/nbd-wtf/go-nostr"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // addCmd represents the add command
@@ -12,7 +17,30 @@ var addCmd = &cobra.Command{
 	Short: "Add a new password",
 	Long:  `Add a new password to the password manager`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("add called")
+		sk := nostr.GeneratePrivateKey()
+		pub, _ := nostr.GetPublicKey(sk)
+
+		ev := nostr.Event{
+			PubKey:    pub,
+			CreatedAt: time.Now(),
+			Kind:      1,
+			Tags:      nil,
+			Content:   "Hello World!",
+		}
+
+		// calling Sign sets the event ID field and the event Sig field
+		ev.Sign(sk)
+
+		// publish the event to two relays
+		for _, url := range strings.Split(viper.GetString("RELAY"), ",") {
+			relay, e := nostr.RelayConnect(context.Background(), strings.TrimSpace(url))
+			if e != nil {
+				fmt.Println(e)
+				continue
+			}
+			fmt.Println("published to ", url, relay.Publish(context.Background(), ev))
+		}
+
 	},
 }
 
