@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/nbd-wtf/go-nostr"
+	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/nbd-wtf/go-nostr/nip19"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -17,6 +18,7 @@ var listCmd = &cobra.Command{
 	Short: "List password keys",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
+		messages := make(map[string]*nostr.Event)
 
 		for _, url := range strings.Split(viper.GetString("RELAY"), ",") {
 			relay, err := nostr.RelayConnect(context.Background(), strings.TrimSpace(url))
@@ -24,11 +26,14 @@ var listCmd = &cobra.Command{
 				continue
 			}
 
+			pub, _ := nostr.GetPublicKey(viper.GetString("KEY"))
+			npub, _ := nip19.EncodePublicKey(pub)
+
 			var filter nostr.Filter
-			if _, v, err := nip19.Decode(viper.GetString("NPUB")); err == nil {
+			if _, v, err := nip19.Decode(npub); err == nil {
 				pub := v.(string)
 				filter = nostr.Filter{
-					Kinds:   []int{1},
+					Kinds:   []int{4},
 					Authors: []string{pub},
 				}
 			} else {
@@ -39,10 +44,15 @@ var listCmd = &cobra.Command{
 			events := relay.QuerySync(ctx, filter)
 
 			for _, ev := range events {
-				fmt.Println(ev.ID, strings.TrimSpace(ev.Content))
+				messages[ev.ID] = ev
 			}
 		}
 
+		for _, ev := range messages {
+			shared, _ := nip04.ComputeSharedSecret(ev.PubKey, viper.GetString("KEY"))
+			msg, _ := nip04.Decrypt(ev.Content, shared)
+			fmt.Println(ev.CreatedAt, msg, ev.Tags)
+		}
 	},
 }
 

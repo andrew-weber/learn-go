@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
+	"github.com/nbd-wtf/go-nostr/nip04"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -17,15 +18,19 @@ var addCmd = &cobra.Command{
 	Short: "Add a new password",
 	Long:  `Add a new password to the password manager`,
 	Run: func(cmd *cobra.Command, args []string) {
-		sk := nostr.GeneratePrivateKey()
+
+		sk := viper.GetString("KEY")
 		pub, _ := nostr.GetPublicKey(sk)
+
+		shared, _ := nip04.ComputeSharedSecret(pub, sk)
+		msg, _ := nip04.Encrypt("this is a new message", shared)
 
 		ev := nostr.Event{
 			PubKey:    pub,
 			CreatedAt: time.Now(),
-			Kind:      1,
-			Tags:      nil,
-			Content:   "Hello World!",
+			Kind:      4,
+			Tags:      nostr.Tags{nostr.Tag{"p", pub}},
+			Content:   msg,
 		}
 
 		// calling Sign sets the event ID field and the event Sig field
@@ -33,7 +38,9 @@ var addCmd = &cobra.Command{
 
 		// publish the event to two relays
 		for _, url := range strings.Split(viper.GetString("RELAY"), ",") {
-			relay, e := nostr.RelayConnect(context.Background(), strings.TrimSpace(url))
+			url := strings.TrimSpace(url)
+
+			relay, e := nostr.RelayConnect(context.Background(), url)
 			if e != nil {
 				fmt.Println(e)
 				continue
