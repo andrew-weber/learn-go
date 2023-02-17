@@ -1,10 +1,15 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"time"
+
+	"golang.org/x/term"
 
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
@@ -19,11 +24,39 @@ var addCmd = &cobra.Command{
 	Long:  `Add a new password to the password manager`,
 	Run: func(cmd *cobra.Command, args []string) {
 
+		reader := bufio.NewReader(os.Stdin)
+
+		fmt.Print("Enter Key: ")
+		k, err := reader.ReadString('\n')
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Print("Enter Password: ")
+		bpw, err := term.ReadPassword(int(os.Stdin.Fd()))
+		if err != nil {
+			panic(err)
+		}
+
+		type kvp struct {
+			Key string
+			Val string
+		}
+
+		thing := kvp{
+			Key: strings.TrimSpace(string(k)),
+			Val: strings.TrimSpace(string(bpw)),
+		}
+
+		result, _ := json.Marshal(thing)
+
+		fmt.Println("\n\b", thing.Key, thing.Val, string(result))
+
 		sk := viper.GetString("KEY")
 		pub, _ := nostr.GetPublicKey(sk)
 
 		shared, _ := nip04.ComputeSharedSecret(pub, sk)
-		msg, _ := nip04.Encrypt("this is a new message", shared)
+		msg, _ := nip04.Encrypt(string(result), shared)
 
 		ev := nostr.Event{
 			PubKey:    pub,

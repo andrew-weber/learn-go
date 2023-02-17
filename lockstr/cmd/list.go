@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -48,10 +49,21 @@ var listCmd = &cobra.Command{
 			}
 		}
 
+		type kvp struct {
+			Key string
+			Val string
+		}
+
 		for _, ev := range messages {
 			shared, _ := nip04.ComputeSharedSecret(ev.PubKey, viper.GetString("KEY"))
 			msg, _ := nip04.Decrypt(ev.Content, shared)
-			fmt.Println(ev.CreatedAt, msg, ev.Tags)
+
+			var kvp kvp
+			json.Unmarshal([]byte(msg), &kvp)
+			if (kvp.Key == "") || (kvp.Val == "") {
+				continue
+			}
+			fmt.Println(kvp.Key, ": ", kvp.Val)
 		}
 	},
 }
