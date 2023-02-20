@@ -16,6 +16,7 @@ import (
 type Entry struct {
 	Key      string
 	Password string
+	nostrKey string
 }
 
 func AddEntry(entry *Entry) {
@@ -65,7 +66,6 @@ func GetEntry(key string) *Entry {
 	return entries[key]
 }
 
-// TODO: I need to figure out how to get the event ID from the entry, probably extend the Entry struct
 func DeleteEntry(key string) {
 	evs := fetchEvents()
 	entries := eventsToEntries(evs)
@@ -73,16 +73,14 @@ func DeleteEntry(key string) {
 	sk := viper.GetString("KEY")
 	pub, _ := nostr.GetPublicKey(sk)
 
-	fmt.Println(entries[key])
-
-	if evs[key] == nil {
+	if entries[key] == nil {
 		return
 	}
 
 	ev := nostr.Event{
 		Kind:   5,
 		PubKey: pub,
-		Tags:   nostr.Tags{nostr.Tag{"e", evs[key].ID}},
+		Tags:   nostr.Tags{nostr.Tag{"e", entries[key].nostrKey}},
 	}
 
 	fmt.Println(ev)
@@ -99,6 +97,7 @@ func eventsToEntries(events map[string]*nostr.Event) map[string]*Entry {
 
 		var entry Entry
 		json.Unmarshal([]byte(msg), &entry)
+		entry.nostrKey = ev.ID
 
 		if (entry.Key == "") || (entry.Password == "") {
 			continue
