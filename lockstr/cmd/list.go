@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	nostr "github.com/andrew-weber/lockstr/lib"
+	entries "github.com/andrew-weber/lockstr/lib"
 	"github.com/spf13/cobra"
 )
 
@@ -13,7 +13,7 @@ var listCmd = &cobra.Command{
 	Short: "List password keys",
 	Long:  ``,
 	Run: func(cmd *cobra.Command, args []string) {
-		entries := nostr.ListEntries()
+		entries := entries.ListEntries()
 
 		for _, entry := range entries {
 			fmt.Println(entry.Key)

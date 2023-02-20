@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	nostr_lib "github.com/andrew-weber/lockstr/lib"
+	entries "github.com/andrew-weber/lockstr/lib"
 	"github.com/atotto/clipboard"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
@@ -23,7 +23,7 @@ var getCmd = &cobra.Command{
 			return
 		}
 
-		entry := nostr_lib.GetEntry(strings.TrimSpace(string(args[0])))
+		entry := entries.GetEntry(strings.TrimSpace(string(args[0])))
 
 		if entry == nil {
 			fmt.Println("No entry found")

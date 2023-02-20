@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/term"
 
-	nostr_lib "github.com/andrew-weber/lockstr/lib"
+	entries "github.com/andrew-weber/lockstr/lib"
 	"github.com/nbd-wtf/go-nostr"
 	"github.com/nbd-wtf/go-nostr/nip04"
 
@@ -40,12 +40,12 @@ var addCmd = &cobra.Command{
 		shared, _ := nip04.ComputeSharedSecret(pub, sk)
 		pwd, _ := nip04.Encrypt(strings.TrimSpace(string(bpw)), shared)
 
-		thing := &nostr_lib.Entry{
+		thing := &entries.Entry{
 			Key:      strings.TrimSpace(strings.TrimSpace(string(args[0]))),
 			Password: string(pwd),
 		}
 
-		nostr_lib.AddEntry(thing)
+		entries.AddEntry(thing)
 	},
 }
 

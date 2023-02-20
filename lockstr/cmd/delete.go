@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"fmt"
+	"strings"
 
+	entries "github.com/andrew-weber/lockstr/lib"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +13,7 @@ var deleteCmd = &cobra.Command{
 	Short: "Remove a password",
 	Long:  `Remove a password from the password manager`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("delete called")
+		entries.DeleteEntry(strings.TrimSpace(string(args[0])))
 	},
 }
 

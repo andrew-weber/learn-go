@@ -38,21 +38,12 @@ func AddEntry(entry *Entry) {
 	// calling Sign sets the event ID field and the event Sig field
 	ev.Sign(sk)
 
-	// publish the event to two relays
-	for _, url := range strings.Split(viper.GetString("RELAY"), ",") {
-		url := strings.TrimSpace(url)
-
-		relay, e := nostr.RelayConnect(context.Background(), url)
-		if e != nil {
-			fmt.Println(e)
-			continue
-		}
-		fmt.Println("published to ", url, relay.Publish(context.Background(), ev))
-	}
+	publishEvent(&ev)
 }
 
 func ListEntries() []*Entry {
-	entries := fetchEntries()
+	evs := fetchEvents()
+	entries := eventsToEntries(evs)
 
 	result := make([]*Entry, 0, len(entries))
 
@@ -64,7 +55,8 @@ func ListEntries() []*Entry {
 }
 
 func GetEntry(key string) *Entry {
-	entries := fetchEntries()
+	evs := fetchEvents()
+	entries := eventsToEntries(evs)
 
 	if entries[key] == nil {
 		return nil
@@ -73,8 +65,53 @@ func GetEntry(key string) *Entry {
 	return entries[key]
 }
 
-func fetchEntries() map[string]*Entry {
-	messages := make(map[string]*nostr.Event)
+// TODO: I need to figure out how to get the event ID from the entry, probably extend the Entry struct
+func DeleteEntry(key string) {
+	evs := fetchEvents()
+	entries := eventsToEntries(evs)
+
+	sk := viper.GetString("KEY")
+	pub, _ := nostr.GetPublicKey(sk)
+
+	fmt.Println(entries[key])
+
+	if evs[key] == nil {
+		return
+	}
+
+	ev := nostr.Event{
+		Kind:   5,
+		PubKey: pub,
+		Tags:   nostr.Tags{nostr.Tag{"e", evs[key].ID}},
+	}
+
+	fmt.Println(ev)
+
+	ev.Sign(sk)
+	publishEvent(&ev)
+}
+
+func eventsToEntries(events map[string]*nostr.Event) map[string]*Entry {
+	entries := make(map[string]*Entry)
+	for _, ev := range events {
+		shared, _ := nip04.ComputeSharedSecret(ev.PubKey, viper.GetString("KEY"))
+		msg, _ := nip04.Decrypt(ev.Content, shared)
+
+		var entry Entry
+		json.Unmarshal([]byte(msg), &entry)
+
+		if (entry.Key == "") || (entry.Password == "") {
+			continue
+		}
+
+		entries[entry.Key] = &entry
+	}
+
+	return entries
+}
+
+func fetchEvents() map[string]*nostr.Event {
+	events := make(map[string]*nostr.Event)
 
 	for _, url := range strings.Split(viper.GetString("RELAY"), ",") {
 		relay, err := nostr.RelayConnect(context.Background(), strings.TrimSpace(url))
@@ -97,27 +134,25 @@ func fetchEntries() map[string]*Entry {
 		}
 
 		ctx, _ := context.WithCancel(context.Background())
-		events := relay.QuerySync(ctx, filter)
+		evs := relay.QuerySync(ctx, filter)
 
-		for _, ev := range events {
-			messages[ev.ID] = ev
+		for _, ev := range evs {
+			events[ev.ID] = ev
 		}
 	}
 
-	entries := make(map[string]*Entry)
-	for _, ev := range messages {
-		shared, _ := nip04.ComputeSharedSecret(ev.PubKey, viper.GetString("KEY"))
-		msg, _ := nip04.Decrypt(ev.Content, shared)
+	return events
+}
 
-		var entry Entry
-		json.Unmarshal([]byte(msg), &entry)
+func publishEvent(ev *nostr.Event) {
+	for _, url := range strings.Split(viper.GetString("RELAY"), ",") {
+		url := strings.TrimSpace(url)
 
-		if (entry.Key == "") || (entry.Password == "") {
+		relay, e := nostr.RelayConnect(context.Background(), url)
+		if e != nil {
+			fmt.Println(e)
 			continue
 		}
-
-		entries[entry.Key] = &entry
+		fmt.Println("published to ", url, relay.Publish(context.Background(), *ev))
 	}
-
-	return entries
 }
