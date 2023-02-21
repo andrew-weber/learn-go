@@ -78,12 +78,11 @@ func DeleteEntry(key string) {
 	}
 
 	ev := nostr.Event{
-		Kind:   5,
-		PubKey: pub,
-		Tags:   nostr.Tags{nostr.Tag{"e", entries[key].nostrKey}},
+		Kind:    5,
+		PubKey:  pub,
+		Tags:    nostr.Tags{nostr.Tag{"e", entries[key].nostrKey}},
+		Content: "Deleting " + entries[key].nostrKey,
 	}
-
-	fmt.Println(ev)
 
 	ev.Sign(sk)
 	publishEvent(&ev)
@@ -112,7 +111,7 @@ func eventsToEntries(events map[string]*nostr.Event) map[string]*Entry {
 func fetchEvents() map[string]*nostr.Event {
 	events := make(map[string]*nostr.Event)
 
-	for _, url := range strings.Split(viper.GetString("RELAY"), ",") {
+	for _, url := range strings.Split(viper.GetString("RELAYS"), ",") {
 		relay, err := nostr.RelayConnect(context.Background(), strings.TrimSpace(url))
 		if err != nil {
 			continue
@@ -144,7 +143,7 @@ func fetchEvents() map[string]*nostr.Event {
 }
 
 func publishEvent(ev *nostr.Event) {
-	for _, url := range strings.Split(viper.GetString("RELAY"), ",") {
+	for _, url := range strings.Split(viper.GetString("RELAYS"), ",") {
 		url := strings.TrimSpace(url)
 
 		relay, e := nostr.RelayConnect(context.Background(), url)
