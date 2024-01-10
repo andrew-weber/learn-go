@@ -1,7 +1,7 @@
 package main
 
 import (
-	"echo-test/router"
+	"echo-test/handlers"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -10,9 +10,11 @@ import (
 func main() {
 
 	e := echo.New()
+
 	e.Use(middleware.Logger())
 
-	e.GET("/kanto", router.GetAllKanto)
+	e.GET("/kanto", handlers.GetAllKanto)
+	e.GET("/turso", handlers.Query)
 
 	e.Logger.Fatal(e.Start(":3000"))
 }

@@ -1,4 +1,4 @@
-package router
+package handlers
 
 import (
 	"echo-test/services"
