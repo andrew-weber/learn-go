@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"database/sql"
-	dbc "echo-test/database/queries"
+	database "echo-test/database/queries"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -12,7 +12,7 @@ import (
 func Query(c echo.Context) error {
 	db := c.Get("db").(*sql.DB)
 
-	results, err := dbc.GetMarks(db)
+	results, err := database.GetMarks(db)
 	if err != nil {
 		return c.String(http.StatusFailedDependency, err.Error())
 	}
