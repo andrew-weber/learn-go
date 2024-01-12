@@ -1,17 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	web "web/hello"
 
 	"github.com/a-h/templ"
+	"github.com/labstack/echo/v4"
 )
 
 func main() {
-	component := hello("John")
+	e := echo.New()
 
-	http.Handle("/", templ.Handler(component))
+	component := web.Hello("John")
 
-	fmt.Println("Listening on :3000")
-	http.ListenAndServe(":3000", nil)
+	e.GET("/", templ.Handler(component))
+	e.Logger.Fatal(e.Start(":3000"))
 }
