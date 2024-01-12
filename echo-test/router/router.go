@@ -5,6 +5,6 @@ import (
 )
 
 func SetupRoutes(e *echo.Echo) {
-	AddFirstRoutes(e)
-	AddSecondRoutes(e)
+	ApiRouter(e)
+	WebRouter(e)
 }
