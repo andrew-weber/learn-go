@@ -15,9 +15,9 @@ func renderHtml(cmp templ.Component) func(c echo.Context) error {
 }
 
 func WebRouter(e *echo.Echo) *echo.Group {
-	router := e.Group("/")
-
-	router.GET("", renderHtml(web.Test("test")))
+	e.GET("/", renderHtml(web.Test("test")))
+	router := e.Group("/web")
+	router.GET("/", renderHtml(web.Test("test")))
 
 	return router
 }

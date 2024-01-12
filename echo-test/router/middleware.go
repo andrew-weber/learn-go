@@ -2,7 +2,6 @@ package router
 
 import (
 	"database/sql"
-	"echo-test/database"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -10,11 +9,7 @@ import (
 
 var db *sql.DB
 
-func SetupMiddleware(e *echo.Echo) {
-	dbx, err := database.ConnectDB()
-	if err != nil {
-		e.Logger.Fatal(err)
-	}
+func SetupMiddleware(e *echo.Echo, dbx *sql.DB) {
 	db = dbx
 	e.Use(middleware.Logger())
 	e.Use(injectDbMiddleware)
